@@ -1,0 +1,26 @@
+name: Test cross repos
+
+on: 
+  pull_request:
+    types: ['ready_for_review']
+
+
+jobs:
+  trigger:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Get PR number
+        id: pr
+        run: |
+          PR_NUMBER=GITHUB_REF | awk 'BEGIN { FS = "/" } ; { print $3 }')
+          echo "pr number: $PR_NUMBER"
+          echo "branch name: ${{github.head_ref}}"
+          echo ::set-output name=pr_number::$PR_NUMBER
+    
+      - name: Trigger building
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.CHECKOUT_REPOS }}
+          repository: test-organization-token/repo2
+          event-type: build_repo2
+          client-payload: '{"type": "build_repo2", "branch": ${{github.head_ref}}, "pr_number": ${{steps.pr.outputs.pr_number}}}'
